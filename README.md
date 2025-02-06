@@ -4,4 +4,4 @@ CORAL is a probabilistic, graph-based method designed to integrate diverse spati
 Taking multimodality molecular profiles of unmatched spatial resolution and detected features, CORAL generates single-cell embedding with information from both data modalities, 
 deconvolves the lower-resolution modality to infer its profile in individual cells, and predicts interactions between neighboring cells.
 
-<img src=figure/github_figure_1.png width="1000" />
+<img src=figures/github_figure1.png width="1000" />
