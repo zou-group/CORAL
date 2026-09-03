@@ -1,1 +1,0 @@
-from .coral_main import create_model

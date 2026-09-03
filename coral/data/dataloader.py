@@ -37,8 +37,8 @@ class VisCoxDataset(Dataset):
         else:
             self.sc_rna=None
         
-        if 'CELL_TYPE' in codex_data.obs.columns:
-            self.cell_type = codex_data.obs['CELL_TYPE']
+        if 'cell_type' in codex_data.obs.columns:
+            self.cell_type = codex_data.obs['cell_type']
         else:
             
             self.cell_type = None

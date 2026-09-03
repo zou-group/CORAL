@@ -58,7 +58,7 @@ def reindex_adata_qz(adata: anndata.AnnData, adata_qz: anndata.AnnData) -> annda
     return adata_qz_reindexed
 
 
-def generate_and_validate(model, dataloader,device, hires_adata):
+def generate_and_validate(model, dataloader,device, hires_adata, ground_truth = False):
     model.eval()
     generated_expr = []
     generated_protein = []
@@ -89,8 +89,9 @@ def generate_and_validate(model, dataloader,device, hires_adata):
             generated_expr.append(output['px_rate_aggregated'].cpu().numpy())
             generated_protein.append(output['py_rate'].cpu().numpy())
             latent_rep.append(output['z_mu'].cpu().numpy())
-            #visium_true.append(batch.visium_spot_exp.cpu().numpy())
-            #codex_true.append(batch.x[:, model.visium_dim:][center_cell_idx].cpu().numpy())
+            if ground_truth:
+                visium_true.append(batch.visium_spot_exp.cpu().numpy())
+                codex_true.append(batch.x[:, model.visium_dim:][center_cell_idx].cpu().numpy())
             attn_weights_all.append(output['attn_weights_2'][1].cpu().numpy())
             edge_indices_all.append(edge_index.cpu().numpy())
             
@@ -104,8 +105,9 @@ def generate_and_validate(model, dataloader,device, hires_adata):
     generated_protein = np.concatenate(generated_protein, axis=0)
     latent_rep = np.concatenate(latent_rep, axis=0)
     locations = np.concatenate(locations, axis=0)
-    #visium_true = np.concatenate(visium_true, axis=0)
-    #codex_true = np.concatenate(codex_true, axis=0)
+    if ground_truth:
+        visium_true = np.concatenate(visium_true, axis=0)
+        codex_true = np.concatenate(codex_true, axis=0)
     v_values = np.concatenate(v_values, axis=0)
     cell_types = np.concatenate(cell_types, axis=0)
     
@@ -113,13 +115,17 @@ def generate_and_validate(model, dataloader,device, hires_adata):
     attn_weights_all = np.concatenate(attn_weights_all, axis=0)
     
 
+    
     adata_model_gener = anndata.AnnData(generated_protein)
     adata_model_gener.obsm['generated_expr'] = generated_expr
     adata_model_gener.obsm['coral'] = latent_rep
     adata_model_gener.obsm['spatial'] = locations
     adata_model_gener.obsm['v_values'] = v_values
     adata_model_gener.obsm['cell_types'] = cell_types
-
+    adata_model_gener.obsm['cell_types'] = cell_types
+    if ground_truth:
+        adata_model_gener.obsm['visium_true'] = visium_true
+        adata_model_gener.obsm['codex_true'] = codex_true        
     adata_model_gener_reindexed = reindex_adata_qz(hires_adata, adata_model_gener)
 
     

@@ -14,6 +14,7 @@ def add_cluster(
     res: float = 0.1,
     use_rep_for_cluster: str | None = None,
     need_lognormed: bool | None = None,
+    n_neighbors: int = 100, 
 ):
 
     # Copy input to avoid modifying the original AnnData
@@ -29,7 +30,7 @@ def add_cluster(
         use_rep_for_cluster = "X_pca"
 
     # Compute neighbors and Leiden clusters
-    sc.pp.neighbors(adata_, n_neighbors=100, use_rep=use_rep_for_cluster)
+    sc.pp.neighbors(adata_, n_neighbors=n_neighbors, use_rep=use_rep_for_cluster)
     sc.tl.leiden(adata_, resolution=res, random_state=0, flavor="igraph")
 
     adata_.obs["cluster"] = adata_.obs["leiden"].astype(str)
@@ -131,22 +132,22 @@ def prepare_local_subgraphs(combined_expr, codex_coords, one_hot_cell_types, spo
     
     return dataloader
 
-def downsample_spatial_data(adata, block_size=3):
+def downsample_spatial_data(adata, n_blocks_x=12, n_blocks_y=12):
 
     spatial_data = adata.obsm['spatial']
     min_coord = spatial_data.min(axis=0)
     max_coord = spatial_data.max(axis=0)
     norm_spatial = (spatial_data - min_coord) / (max_coord - min_coord)
 
-    n_blocks = 12
+
     block_data = []
     block_spatial = []
     
-    for i in range(n_blocks):
-        for j in range(n_blocks):
+    for i in range(n_blocks_x):
+        for j in range(n_blocks_y):
         
-            min_x, max_x = i / n_blocks, (i + 1) / n_blocks
-            min_y, max_y = j / n_blocks, (j + 1) / n_blocks
+            min_x, max_x = i / n_blocks_x, (i + 1) / n_blocks_x
+            min_y, max_y = j / n_blocks_y, (j + 1) / n_blocks_y
             
             
             block_indices = np.where(

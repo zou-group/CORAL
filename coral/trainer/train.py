@@ -115,7 +115,7 @@ class NegBinom(Distribution):
         return ll
     
 
-def train_model(model, optimizer, dataloader, epochs=300,device='cpu', prot_idx = None, gene_idx = None):
+def train_model(model, optimizer, dataloader, epochs=300,device='cpu', prot_idx = None, gene_idx = None, granu = True, heterogeneity = False):
     
     model.to(device)
     scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.98)
@@ -141,7 +141,7 @@ def train_model(model, optimizer, dataloader, epochs=300,device='cpu', prot_idx 
             codex_true = codex_true[center_cell]
             cell_type = cell_type[center_cell]
             
-            loss = loss_function(model, batch.spot_indices, visium_true, output, codex_true, cell_type, output['generated_cell_type'], output['z_mu'], output['z_logvar'],output['pxi_rate'], output['attn_weights_2'])
+            loss = loss_function(model, batch.spot_indices, visium_true, output, codex_true, cell_type, output['generated_cell_type'], output['z_mu'], output['z_logvar'],output['pxi_rate'], output['attn_weights_2'], granu = granu, heterogeneity = heterogeneity)
 
 
             # ---- 2) Contrastive loss between matched protein/RNA markers ----
@@ -180,7 +180,7 @@ def train_model(model, optimizer, dataloader, epochs=300,device='cpu', prot_idx 
 
 
 
-def loss_function(model, spot_indices, visium_true, output, codex_true, cell_type_true, cell_type_pred, mu, logvar, contrastive_outputs, edge_weights,margin=50):
+def loss_function(model, spot_indices, visium_true, output, codex_true, cell_type_true, cell_type_pred, mu, logvar, contrastive_outputs, edge_weights,margin=50, granu = True, heterogeneity=False):
 
 
     epsilon = 1e-5
@@ -240,7 +240,12 @@ def loss_function(model, spot_indices, visium_true, output, codex_true, cell_typ
     #print(div_loss)
     # Sum all losses
     #if model.codex_size/model.visium_size>4:     
-    total_loss = 1e3 * visium_recon_loss + codex_recon_loss  + KLD_z + 0.1 * KLD_v + 1e2 * contrastive_loss + xi_recon_loss + 1e2*laplacian_reg
+    if heterogeneity:
+        total_loss = 1e3 * visium_recon_loss + codex_recon_loss  + KLD_z + 0.1 * KLD_v + 1e4 * contrastive_loss + xi_recon_loss + 1e2*laplacian_reg 
+    elif granu:
+        total_loss = 1e3 * visium_recon_loss + codex_recon_loss  + KLD_z + 0.1 * KLD_v + 1e2 * contrastive_loss + xi_recon_loss + 1e2*laplacian_reg
+    else:
+        total_loss = 1e3 * visium_recon_loss + codex_recon_loss  + KLD_z + 0.1 * KLD_v + 1 * contrastive_loss + xi_recon_loss + 1e3*laplacian_reg
     #else:
     #total_loss = 1e3 * visium_recon_loss + codex_recon_loss  + KLD_z + 0.1 * KLD_v + 1e4 * contrastive_loss + xi_recon_loss + 1e2*laplacian_reg #+ 1e2 * div_loss#heterogenous samples
     return total_loss
